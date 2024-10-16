@@ -2,6 +2,7 @@ package main.service.impl;
 
 import main.service.SearchAndReplace;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -23,7 +24,7 @@ public class XmlSearchAndReplace implements SearchAndReplace {
             // Normalizing the XML structure
             doc.getDocumentElement().normalize();
             // Replacing values
-            replaceTextInNodes(doc.getDocumentElement(), searchString, replaceString);
+            replaceAttributeInNodes(doc.getDocumentElement(), searchString, replaceString);
             // Writing the updated XML to the writer
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -42,19 +43,25 @@ public class XmlSearchAndReplace implements SearchAndReplace {
     }
 
     // Helper method to replace text in nodes
-    private void replaceTextInNodes(Node node, String searchString, String replaceString) {
-        if (node.getNodeType() == Node.TEXT_NODE) {
-            String trimmedValue = node.getNodeValue().trim();
-            if (trimmedValue.contains(searchString)) {
-                // Replacing the matching text
-                String newValue = trimmedValue.replace(searchString, replaceString);
-                node.setNodeValue(newValue);
-            }
-        } else {
-            NodeList childNodes = node.getChildNodes();
-            for (int i = 0; i < childNodes.getLength(); i++) {
-                replaceTextInNodes(childNodes.item(i), searchString, replaceString);
+    private void replaceAttributeInNodes(Node node, String searchString, String replaceString) {
+        if (node.hasAttributes()) {
+            NamedNodeMap attributes = node.getAttributes();
+            // Looping through all attributes of the node
+            for (int i = 0; i < attributes.getLength(); i++) {
+                Node attribute = attributes.item(i);
+                String attrValue = attribute.getNodeValue();
+                if (attrValue.contains(searchString)) {
+                    // Replacing the matching text in the attribute's value
+                    String newValue = attrValue.replace(searchString, replaceString);
+                    attribute.setNodeValue(newValue);
+                }
             }
         }
+        // Recursively checking child nodes
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            replaceAttributeInNodes(childNodes.item(i), searchString, replaceString);
+        }
     }
+
 }
